@@ -1,2 +1,2 @@
 # Hello, World!
- DIEGO É VIADÃO e BEM BUNDA MOLE
+ DIEGO É VIADÃO e BEM BUNDA MOLE e GAY

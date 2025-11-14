@@ -21,7 +21,7 @@ Funcionalidades Selecionadas:
 (OK) 5. Permitir o uso do mouse para controlar a nave
 (OK) 6. Permitir o salvamento dos High Scores, mostrado os na tela de início/introdução
 (OK) 7. Fazer com que a imagem de fundo mude conforme a dificuldade do jogo seja alterada
-8. animar o sprite do meteoro
+(OK) 8. animar o sprite do meteoro
 (OK) 9. permitir que a nave tenha armas que podem destruir os meteoros atingidos por seus 
 (OK) 10. alterar musica de fundo de acordo com as fases do jogo
 (OK) 11. fazer com que os meteoros caiam em velocidades diferentes

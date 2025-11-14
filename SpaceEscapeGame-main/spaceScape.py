@@ -100,6 +100,11 @@ meteor_img = load_image(ASSETS["meteor"], RED, (40, 40))
 
 sound_point = load_sound(ASSETS["sound_point"])
 sound_hit = load_sound(ASSETS["sound_hit"])
+if sound_point:
+    sound_point.set_volume(0.2) 
+
+if sound_hit:
+    sound_hit.set_volume(0.1)
 
 # TELA: INSERT COIN
 def insert_coin_screen():

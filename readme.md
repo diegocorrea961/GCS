@@ -14,17 +14,17 @@ Mickael > Desenvolvedor
 
 Funcionalidades Selecionadas:
 -
-1. Criar uma tela de introdução ao estilo Insert Coin
-2. Criar uma tela de encerramento(para vitória e para derrota)
-3. Criar ao menos 3 fases distintas, com diferentes dinâmicas, efeitos sonoros e de tela, músicas de fundo e dificuldades de jogo.
-4. Definir condições de vitória, por exemplo: jogo contra o tempo, ou até atingir uma pontuação específica.
-5. Permitir o uso do mouse para controlar a nave
-6. Permitir o salvamento dos High Scores, mostrado os na tela de início/introdução
-7. Fazer com que a imagem de fundo mude conforme a dificuldade do jogo seja alterada
+(OK) 1. Criar uma tela de introdução ao estilo Insert Coin
+(OK) 2. Criar uma tela de encerramento(para vitória e para derrota)
+(OK) 3. Criar ao menos 3 fases distintas, com diferentes dinâmicas, efeitos sonoros e de tela, músicas de fundo e dificuldades de jogo.
+(OK) 4. Definir condições de vitória, por exemplo: jogo contra o tempo, ou até atingir uma pontuação específica.
+(OK) 5. Permitir o uso do mouse para controlar a nave
+(OK) 6. Permitir o salvamento dos High Scores, mostrado os na tela de início/introdução
+(OK) 7. Fazer com que a imagem de fundo mude conforme a dificuldade do jogo seja alterada
 8. animar o sprite do meteoro
-9. permitir que a nave tenha armas que podem destruir os meteoros atingidos por seus 
-10. alterar musica de fundo de acordo com as fases do jogo
-11. fazer com que os meteoros caiam em velocidades diferentes
+(OK) 9. permitir que a nave tenha armas que podem destruir os meteoros atingidos por seus 
+(OK) 10. alterar musica de fundo de acordo com as fases do jogo
+(OK) 11. fazer com que os meteoros caiam em velocidades diferentes
 
 Projeto de Jogo
 -

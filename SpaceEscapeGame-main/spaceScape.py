@@ -13,6 +13,8 @@
 import pygame
 import random
 import os
+import json
+import time
 
 # Inicialização
 pygame.init()
@@ -35,9 +37,20 @@ ASSETS = {
 
     "music_tela": "music_tela.mp3",
     "music_facil": "music_facil.mp3",
-    "music_medio": "musica_medio.mp3",
-    "music_dificil": "musica_dificil.mp3",
+    "music_medio": "music_medio.mp3",
+    "music_dificil": "music_dificil.mp3",
+
+    # imagens de fundo por fase (você irá colocar esses arquivos na pasta)
+    "bg_facil": "imgfundo_facil.png",
+    "bg_medio": "imgfundo_medio.png",
+    "bg_dificil": "imgfundo_dificil.png",
+
+    # telas finais
+    "img_gameover": "img_gameover.png",
+    "img_vitoria": "img_vitoria.png",
 }
+
+SCORES_FILE = "scores.json"
 
 # Funções auxiliares
 def find_file_case_insensitive(dirname, filename):
@@ -64,8 +77,8 @@ def load_image(filename, fallback_color, size=None):
             if size:
                 img = pygame.transform.scale(img, size)
             return img
-        except:
-            pass
+        except Exception as e:
+            print(f"Erro ao carregar imagem {filepath}: {e}")
 
     surf = pygame.Surface(size or (50, 50))
     surf.fill(fallback_color)
@@ -76,38 +89,89 @@ def load_sound(filename):
     filepath = os.path.join(base_dir, filename)
 
     if os.path.exists(filepath):
-        return pygame.mixer.Sound(filepath)
+        try:
+            return pygame.mixer.Sound(filepath)
+        except Exception as e:
+            print(f"Erro ao carregar som {filepath}: {e}")
     return None
 
 def play_music(filename, volume=0.4):
     base_dir = os.path.dirname(os.path.abspath(__file__))
     filepath = os.path.join(base_dir, filename)
 
-    if os.path.exists(filepath):
+    try:
         pygame.mixer.music.stop()
-        pygame.mixer.music.load(filepath)
-        pygame.mixer.music.set_volume(volume)
-        pygame.mixer.music.play(-1)
+        if os.path.exists(filepath):
+            pygame.mixer.music.load(filepath)
+            pygame.mixer.music.set_volume(volume)
+            pygame.mixer.music.play(-1)
+        else:
+            print(f"[AVISO] Música não encontrada: {filepath}")
+    except Exception as e:
+        print(f"Erro ao tocar música {filepath}: {e}")
+
+# Funções para salvar/carregar scores
+def load_scores():
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base_dir, SCORES_FILE)
+    if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except:
+            pass
+    # estrutura padrão
+    return {
+        "last_facil": 0,
+        "last_medio": 0,
+        "last_dificil": 0,
+        "high_facil": 0,
+        "high_medio": 0,
+        "high_dificil": 0
+    }
+
+def save_scores(scores):
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base_dir, SCORES_FILE)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(scores, f, indent=2)
+    except Exception as e:
+        print(f"Erro ao salvar scores: {e}")
 
 # Carregar imagens e sons
 WHITE = (255, 255, 255)
 RED = (255, 60, 60)
 BLUE = (60, 100, 255)
+YELLOW = (240, 220, 70)
 
-background = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
+background_menu = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
 player_img = load_image(ASSETS["player"], BLUE, (80, 60))
 meteor_img = load_image(ASSETS["meteor"], RED, (40, 40))
 
+# carregar imagens finais (se existirem)
+img_gameover = load_image(ASSETS["img_gameover"], (20,20,20), (WIDTH, HEIGHT))
+img_vitoria = load_image(ASSETS["img_vitoria"], (20,20,20), (WIDTH, HEIGHT))
+
+# efeitos sonoros
 sound_point = load_sound(ASSETS["sound_point"])
 sound_hit = load_sound(ASSETS["sound_hit"])
 if sound_point:
-    sound_point.set_volume(0.2) 
-
+    sound_point.set_volume(0.2)
 if sound_hit:
     sound_hit.set_volume(0.1)
 
+# carregar fundos por fase (se existirem)
+bg_facil_img = load_image(ASSETS["bg_facil"], (0,0,0), (WIDTH, HEIGHT))
+bg_medio_img = load_image(ASSETS["bg_medio"], (0,0,30), (WIDTH, HEIGHT))
+bg_dificil_img = load_image(ASSETS["bg_dificil"], (40,0,0), (WIDTH, HEIGHT))
+
+# carregar scores
+scores = load_scores()
+
 # TELA: INSERT COIN
 def insert_coin_screen():
+    # tocar a música das telas (não reiniciará ao entrar na seleção)
     play_music(ASSETS["music_tela"])
 
     font_big = pygame.font.Font(None, 80)
@@ -115,14 +179,14 @@ def insert_coin_screen():
     blink_timer = 0
 
     while True:
-        screen.blit(background, (0, 0))
+        screen.blit(background_menu, (0, 0))
 
         blink_timer += clock.get_time()
         if blink_timer > 500:
             blink = not blink
             blink_timer = 0
 
-        title = font_big.render("INSERT COIN", True, WHITE)
+        title = font_big.render("INSERT COIN", True, YELLOW)
         if blink:
             screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 40))
 
@@ -138,33 +202,37 @@ def insert_coin_screen():
 
 # TELA: SELEÇÃO DE FASE
 def select_phase_screen():
-    # play_music(ASSETS["music_tela"]) # removido para musica não reiniciar
-
+    # não reiniciamos a música aqui para manter continuidade
     font_big = pygame.font.Font(None, 60)
-    font_small = pygame.font.Font(None, 40)
+    font_small = pygame.font.Font(None, 30)
 
     options = [
-        ("FÁCIL", 250, "music_facil"),
-        ("MÉDIO", 330, "music_medio"),
-        ("DIFÍCIL", 410, "music_dificil")
+        ("FÁCIL", 230, "facil", bg_facil_img, "music_facil"),
+        ("MÉDIO", 310, "medio", bg_medio_img, "music_medio"),
+        ("DIFÍCIL", 390, "dificil", bg_dificil_img, "music_dificil")
     ]
 
     while True:
-        screen.blit(background, (0, 0))
+        screen.blit(background_menu, (0, 0))
 
         title = font_big.render("SELECIONE A FASE", True, WHITE)
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, 120))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        for text, y, music_key in options:
+        for text, y, key, bg_img, music_key in options:
             label = font_small.render(text, True, WHITE)
-            rect = label.get_rect(center=(WIDTH//2, y))
+            rect = label.get_rect(center=(WIDTH//2 - 40, y))
+
+            # mostrar último score ao lado direito
+            last_label = font_small.render(f"Último: {scores.get('last_' + key, 0)}", True, WHITE)
+            last_rect = last_label.get_rect(midleft=(WIDTH//2 + 20, y))
 
             if rect.collidepoint(mouse_x, mouse_y):
-                pygame.draw.rect(screen, WHITE, rect.inflate(20, 10), 2)
+                pygame.draw.rect(screen, WHITE, rect.inflate(20, 8), 2)
 
             screen.blit(label, rect)
+            screen.blit(last_label, last_rect)
 
         pygame.display.flip()
         clock.tick(FPS)
@@ -175,91 +243,222 @@ def select_phase_screen():
                 exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                for text, y, music_key in options:
+                for text, y, key, bg_img, music_key in options:
                     label = font_small.render(text, True, WHITE)
-                    rect = label.get_rect(center=(WIDTH//2, y))
+                    rect = label.get_rect(center=(WIDTH//2 - 40, y))
                     if rect.collidepoint(mouse_x, mouse_y):
-                        return music_key
+                        # retorna o identificador da fase (facil/medio/dificil)
+                        return key
 
-# LOOP DO JOGO
-def play_game(level_music_key):
-    play_music(ASSETS[level_music_key])
+# Nova função: parâmetros por nível (sem criar meteoros iniciais)
+def get_level_params(level_key):
+    """
+    Retorna: min_speed, max_speed, spawn_interval_ms, max_meteoros, points_per, victory_target, bg_img, music_key
+    """
+    if level_key == "facil":
+        return (2, 3, 1000, 8, 1, 300, bg_facil_img, ASSETS["music_facil"])
+    elif level_key == "medio":
+        return (2, 6, 800, 12, 2, 250, bg_medio_img, ASSETS["music_medio"])
+    else:  # dificil
+        return (5, 9, 600, 20, 3, 200, bg_dificil_img, ASSETS["music_dificil"])
+
+# LOOP DO JOGO atualizado com spawn gradual, mouse e tiro
+def play_game(level_key):
+    # pegar parâmetros do nível
+    min_speed, max_speed, spawn_interval, max_meteoros, points_per, victory_target, bg_img, music_file = get_level_params(level_key)
+
+    # tocar música da fase
+    play_music(music_file)
 
     player_rect = player_img.get_rect(center=(WIDTH // 2, HEIGHT - 60))
     player_speed = 7
 
-    meteor_list = [pygame.Rect(random.randint(0, WIDTH-40), random.randint(-500,-40), 40, 40) for _ in range(5)]
-    meteor_speed = 5
+    # começar SEM meteoros
+    meteor_list = []
 
+    # iniciar com 10 vidas
+    lives = 10
     score = 0
-    lives = 3
+
     font = pygame.font.Font(None, 36)
 
-    while True:
-        clock.tick(FPS)
-        screen.blit(background, (0, 0))
+    # lasers disparados pela nave
+    lasers = []  # cada laser será dict {'rect': Rect, 'speed': int}
+
+    # temporizador de spawn
+    spawn_acc = 0  # acumula ms
+    last_tick = pygame.time.get_ticks()
+
+    running = True
+    while running:
+        dt = clock.tick(FPS)
+        spawn_acc += dt
+
+        screen.blit(bg_img, (0, 0))
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
+            # clicar com mouse dispara raio
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1:  # left click
+                    lx = player_rect.centerx
+                    ly = player_rect.top
+                    lrect = pygame.Rect(lx-4, ly-20, 8, 20)
+                    lasers.append({'rect': lrect, 'speed': 12})
 
+        # CONTROLE DA NAVE via mouse horizontal (mantém movimento lateral por teclado)
+        mx, my = pygame.mouse.get_pos()
+        player_rect.centerx = mx
+        if player_rect.left < 0:
+            player_rect.left = 0
+        if player_rect.right > WIDTH:
+            player_rect.right = WIDTH
+
+        # também permitir teclado left/right
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT] and player_rect.left > 0:
             player_rect.x -= player_speed
         if keys[pygame.K_RIGHT] and player_rect.right < WIDTH:
             player_rect.x += player_speed
 
-        for meteor in meteor_list:
-            meteor.y += meteor_speed
+        # spawn gradual: adiciona um meteoro a cada spawn_interval ms até max_meteoros
+        if spawn_acc >= spawn_interval:
+            spawn_acc = 0
+            if len(meteor_list) < max_meteoros:
+                x = random.randint(0, WIDTH - 40)
+                y = random.randint(-200, -40)
+                rect = pygame.Rect(x, y, 40, 40)
+                speed = random.randint(min_speed, max_speed)
+                meteor_list.append({'rect': rect, 'speed': speed})
 
-            if meteor.y > HEIGHT:
-                meteor.y = random.randint(-100, -40)
-                meteor.x = random.randint(0, WIDTH - meteor.width)
-                score += 1
-                if sound_point:
-                    sound_point.play()
+        # atualizar lasers
+        for laser in list(lasers):
+            laser['rect'].y -= laser['speed']
+            # remover se sair da tela
+            if laser['rect'].bottom < 0:
+                if laser in lasers:
+                    lasers.remove(laser)
 
-            if meteor.colliderect(player_rect):
+        # atualizar meteoros
+        for meteor in list(meteor_list):
+            meteor_rect = meteor['rect']
+            meteor_speed = meteor['speed']
+
+            meteor_rect.y += meteor_speed
+
+            # colisão com lasers
+            hit_by_laser = False
+            for laser in list(lasers):
+                if meteor_rect.colliderect(laser['rect']):
+                    # meteoro destruído
+                    if meteor in meteor_list:
+                        meteor_list.remove(meteor)
+                    if laser in lasers:
+                        lasers.remove(laser)
+                    score += points_per
+                    if sound_point:
+                        sound_point.play()
+                    hit_by_laser = True
+                    break
+            if hit_by_laser:
+                continue
+
+            # se meteoro passar pelo fundo -> perde vida e reposiciona
+            if meteor_rect.y > HEIGHT:
                 lives -= 1
-                meteor.y = random.randint(-100, -40)
-                meteor.x = random.randint(0, WIDTH - meteor.width)
+                meteor_rect.y = random.randint(-200, -40)
+                meteor_rect.x = random.randint(0, WIDTH - meteor_rect.width)
+                meteor['speed'] = random.randint(min_speed, max_speed)
+                if lives <= 0:
+                    return score, "lose"
+
+            # colisão com a nave
+            if meteor_rect.colliderect(player_rect):
+                lives -= 1
+                meteor_rect.y = random.randint(-200, -40)
+                meteor_rect.x = random.randint(0, WIDTH - meteor_rect.width)
+                meteor['speed'] = random.randint(min_speed, max_speed)
                 if sound_hit:
                     sound_hit.play()
                 if lives <= 0:
-                    return score
+                    return score, "lose"
 
+        # desenhar lasers
+        for laser in lasers:
+            pygame.draw.rect(screen, (0, 255, 255), laser['rect'])
+
+        # desenhar elementos
         screen.blit(player_img, player_rect)
         for meteor in meteor_list:
-            screen.blit(meteor_img, meteor)
+            screen.blit(meteor_img, meteor['rect'])
 
+        # HUD
         text = font.render(f"Pontos: {score}   Vidas: {lives}", True, WHITE)
         screen.blit(text, (10, 10))
 
+        # condição de vitória
+        if score >= victory_target:
+            return score, "win"
+
         pygame.display.flip()
 
-# TELA FINAL
-def end_screen(score):
+# TELA FINAL (agora aceita 'E' para retornar ao Insert Coin)
+def end_screen(score, result, level_key):
+    # stop current music
     pygame.mixer.music.stop()
-    screen.fill((20, 20, 20))
+    # escolher imagem de final
+    if result == "win":
+        img = img_vitoria
+        msg = "Vitoria! Pressione E para voltar ao menu."
+    else:
+        img = img_gameover
+        msg = "Game Over! Pressione E para voltar ao menu."
+
+    # atualizar scores persistentes
+    # salvar last score e highscore
+    if level_key == "facil":
+        scores['last_facil'] = score
+        if score > scores.get('high_facil', 0):
+            scores['high_facil'] = score
+    elif level_key == "medio":
+        scores['last_medio'] = score
+        if score > scores.get('high_medio', 0):
+            scores['high_medio'] = score
+    else:
+        scores['last_dificil'] = score
+        if score > scores.get('high_dificil', 0):
+            scores['high_dificil'] = score
+
+    save_scores(scores)
+
+    # desenhar tela final
+    screen.blit(img, (0, 0))
     font = pygame.font.Font(None, 48)
-
-    end_text = font.render("Fim de jogo! Pressione qualquer tecla.", True, WHITE)
     final_score = font.render(f"Pontuação final: {score}", True, WHITE)
+    info = font.render(msg, True, WHITE)
 
-    screen.blit(end_text, (150, 260))
-    screen.blit(final_score, (250, 300))
+    screen.blit(final_score, (WIDTH//2 - final_score.get_width()//2, HEIGHT//2 - 20))
+    screen.blit(info, (WIDTH//2 - info.get_width()//2, HEIGHT//2 + 30))
     pygame.display.flip()
 
-    while True:
+    # esperar tecla E para voltar ao insert coin
+    waiting = True
+    while waiting:
         for event in pygame.event.get():
-            if event.type in (pygame.QUIT, pygame.KEYDOWN):
-                return
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_e:
+                    waiting = False
+                    return
 
 # Fluxo principal
-insert_coin_screen()
-fase_escolhida = select_phase_screen()
-pontuacao = play_game(fase_escolhida)
-end_screen(pontuacao)
-
-pygame.quit()
+while True:
+    insert_coin_screen()
+    fase_escolhida = select_phase_screen()
+    pontos, resultado = play_game(fase_escolhida)
+    end_screen(pontos, resultado, fase_escolhida)
+    # loop continua e volta para insert_coin

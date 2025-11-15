@@ -227,7 +227,7 @@ def select_phase_screen():
             label = font_small.render(text, True, WHITE)
             rect = label.get_rect(center=(WIDTH//2 - 40, y))
 
-            last_label = font_small.render(f"Último: {scores.get('last_' + key, 0)}", True, WHITE)
+            last_label = font_small.render(f"Score: {scores.get('last_' + key, 0)}", True, WHITE)
             last_rect = last_label.get_rect(midleft=(WIDTH//2 + 20, y))
 
             if rect.collidepoint(mouse_x, mouse_y):
@@ -390,13 +390,18 @@ def end_screen(score, result, level_key):
         msg = "Game Over! Pressione E para voltar ao menu."
 
     if level_key == "facil":
-        scores['last_facil'] = score
+        if score > scores['last_facil']:
+            scores['last_facil'] = score
         scores['high_facil'] = max(scores['high_facil'], score)
+
     elif level_key == "medio":
-        scores['last_medio'] = score
+        if score > scores['last_medio']:
+            scores['last_medio'] = score
         scores['high_medio'] = max(scores['high_medio'], score)
+
     else:
-        scores['last_dificil'] = score
+        if score > scores['last_dificil']:
+            scores['last_dificil'] = score
         scores['high_dificil'] = max(scores['high_dificil'], score)
 
     save_scores(scores)

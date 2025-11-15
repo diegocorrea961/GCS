@@ -443,47 +443,56 @@ def play_game(level_key):
 def end_screen(score, result, level_key):
     pygame.mixer.music.stop()
 
-    if result == "win":
-        img = img_vitoria
-        msg = "Vitoria! Pressione E para voltar ao menu."
-    else:
-        img = img_gameover
-        msg = "Game Over! Pressione E para voltar ao menu."
-
-    if level_key == "facil":
-        if score > scores['last_facil']:
-            scores['last_facil'] = score
-        scores['high_facil'] = max(scores['high_facil'], score)
-
-    elif level_key == "medio":
-        if score > scores['last_medio']:
-            scores['last_medio'] = score
-        scores['high_medio'] = max(scores['high_medio'], score)
-
-    else:
-        if score > scores['last_dificil']:
-            scores['last_dificil'] = score
-        scores['high_dificil'] = max(scores['high_dificil'], score)
-
-    save_scores(scores)
-
+    # fundo já contém "GAME OVER" ou "VITÓRIA"
+    img = img_vitoria if result == "win" else img_gameover
     screen.blit(img, (0, 0))
-    font = pygame.font.Font(None, 48)
 
-    final_score = font.render(f"Pontuação final: {score}", True, WHITE)
-    info = font.render(msg, True, WHITE)
+    # textos inferiores
+    pontos_txt = f"Pontuação final: {score}"
+    subtitulo = "PRESSIONE ESPAÇO PARA VOLTAR"
 
-    screen.blit(final_score, (WIDTH//2 - final_score.get_width()//2, HEIGHT//2 - 20))
-    screen.blit(info, (WIDTH//2 - info.get_width()//2, HEIGHT//2 + 30))
+    font_pts = pygame.font.Font(None, 40)   # menor
+    font_sub = pygame.font.Font(None, 38)
+
+    def draw_text_outline(font, text, color, x, y):
+        outline_color = (0, 0, 0)
+        offsets = [(-2,0),(2,0),(0,-2),(0,2)]
+        for ox, oy in offsets:
+            s = font.render(text, True, outline_color)
+            screen.blit(s, (x + ox, y + oy))
+        s = font.render(text, True, color)
+        screen.blit(s, (x, y))
+
+    # posições mais para baixo
+    y_points = HEIGHT // 2 + 80
+    y_sub = HEIGHT // 2 + 150
+
+    # desenhar pontuação
+    draw_text_outline(
+        font_pts, pontos_txt, (255, 255, 255),
+        WIDTH//2 - font_pts.size(pontos_txt)[0]//2,
+        y_points
+    )
+
+    # desenhar "pressione espaço"
+    draw_text_outline(
+        font_sub, subtitulo, (255, 230, 0),
+        WIDTH//2 - font_sub.size(subtitulo)[0]//2,
+        y_sub
+    )
+
     pygame.display.flip()
 
-    while True:
+    waiting = True
+    while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                waiting = False
                 return
+
 
 # ---------- LOOP PRINCIPAL ----------
 while True:

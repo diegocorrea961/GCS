@@ -440,8 +440,30 @@ def play_game(level_key):
         pygame.display.flip()
 
 # ---------- TELA FINAL ----------
-def end_screen(score, result, level_key):
+def end_screen(score, result, level_key): 
     pygame.mixer.music.stop()
+
+    # --- SALVAR SCORES CORRETAMENTE ---
+    if level_key == "facil":
+        if score > scores.get("last_facil", 0):
+            scores["last_facil"] = score
+        if score > scores.get("high_facil", 0):
+            scores["high_facil"] = score
+
+    elif level_key == "medio":
+        if score > scores.get("last_medio", 0):
+            scores["last_medio"] = score
+        if score > scores.get("high_medio", 0):
+            scores["high_medio"] = score
+
+    elif level_key == "dificil":
+        if score > scores.get("last_dificil", 0):
+            scores["last_dificil"] = score
+        if score > scores.get("high_dificil", 0):
+            scores["high_dificil"] = score
+
+    save_scores(scores)
+    # ----------------------------------
 
     # fundo já contém "GAME OVER" ou "VITÓRIA"
     img = img_vitoria if result == "win" else img_gameover
@@ -451,7 +473,7 @@ def end_screen(score, result, level_key):
     pontos_txt = f"Pontuação final: {score}"
     subtitulo = "PRESSIONE ESPAÇO PARA VOLTAR"
 
-    font_pts = pygame.font.Font(None, 40)   # menor
+    font_pts = pygame.font.Font(None, 40)
     font_sub = pygame.font.Font(None, 38)
 
     def draw_text_outline(font, text, color, x, y):
@@ -467,14 +489,12 @@ def end_screen(score, result, level_key):
     y_points = HEIGHT // 2 + 80
     y_sub = HEIGHT // 2 + 150
 
-    # desenhar pontuação
     draw_text_outline(
         font_pts, pontos_txt, (255, 255, 255),
         WIDTH//2 - font_pts.size(pontos_txt)[0]//2,
         y_points
     )
 
-    # desenhar "pressione espaço"
     draw_text_outline(
         font_sub, subtitulo, (255, 230, 0),
         WIDTH//2 - font_sub.size(subtitulo)[0]//2,
@@ -492,6 +512,7 @@ def end_screen(score, result, level_key):
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 waiting = False
                 return
+
 
 
 # ---------- LOOP PRINCIPAL ----------

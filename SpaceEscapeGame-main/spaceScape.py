@@ -16,6 +16,23 @@ import os
 import json
 import time
 
+#contornar textos
+def outline_text(text, font, color, outline_color):
+    base = font.render(text, True, color)
+    outline = font.render(text, True, outline_color)
+
+    surf = pygame.Surface((base.get_width() + 4, base.get_height() + 4), pygame.SRCALPHA)
+
+    # contorno nas 4 direções
+    surf.blit(outline, (2, 0))
+    surf.blit(outline, (0, 2))
+    surf.blit(outline, (4, 2))
+    surf.blit(outline, (2, 4))
+
+    surf.blit(base, (2, 2))
+    return surf
+
+
 # Inicialização
 pygame.init()
 
@@ -238,35 +255,46 @@ def insert_coin_screen():
 
 # ---------- SELEÇÃO DE FASE ----------
 def select_phase_screen():
-    font_big = pygame.font.Font(None, 60)
-    font_small = pygame.font.Font(None, 30)
+    font_title = pygame.font.Font(None, 70)
+    font_btn = pygame.font.Font(None, 50)
+    font_score = pygame.font.Font(None, 30)
+
+    # Botões alinhados na horizontal
+    btn_y = 300
+    spacing = 220
 
     options = [
-        ("FÁCIL", 230, "facil", bg_facil_img, "music_facil"),
-        ("MÉDIO", 310, "medio", bg_medio_img, "music_medio"),
-        ("DIFÍCIL", 390, "dificil", bg_dificil_img, "music_dificil")
+        ("FÁCIL", WIDTH//2 - spacing, "facil", bg_facil_img, "music_facil", (20, 200, 20)),     # verde
+        ("MÉDIO", WIDTH//2,          "medio", bg_medio_img, "music_medio", (230, 230, 40)),   # amarelo
+        ("DIFÍCIL", WIDTH//2 + spacing, "dificil", bg_dificil_img, "music_dificil", (220, 50, 50)),  # vermelho
     ]
 
     while True:
         screen.blit(background_menu, (0, 0))
 
-        title = font_big.render("SELECIONE A FASE", True, WHITE)
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+        # Título contornado
+        title = outline_text("SELECIONE A FASE", font_title, (255, 255, 0), (0, 0, 0))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 120))
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        for text, y, key, bg_img, music_key in options:
-            label = font_small.render(text, True, WHITE)
-            rect = label.get_rect(center=(WIDTH//2 - 40, y))
+        for text, x, key, bg_img, music_key, color in options:
+            # Botão
+            btn_surface = outline_text(text, font_btn, color, (0, 0, 0))
+            btn_rect = btn_surface.get_rect(center=(x, btn_y))
 
-            last_label = font_small.render(f"Score: {scores.get('last_' + key, 0)}", True, WHITE)
-            last_rect = last_label.get_rect(midleft=(WIDTH//2 + 20, y))
+            # Hover – contorno branco
+            if btn_rect.collidepoint(mouse_x, mouse_y):
+                pygame.draw.rect(screen, (255, 255, 255), btn_rect.inflate(20, 10), 3)
 
-            if rect.collidepoint(mouse_x, mouse_y):
-                pygame.draw.rect(screen, WHITE, rect.inflate(20, 8), 2)
+            screen.blit(btn_surface, btn_rect)
 
-            screen.blit(label, rect)
-            screen.blit(last_label, last_rect)
+            # SCORE abaixo
+            score_value = scores.get("last_" + key, 0)
+            score_text = outline_text(f"Score: {score_value}", font_score, (255, 255, 255), (0, 0, 0))
+
+            score_rect = score_text.get_rect(center=(x, btn_y + 50))
+            screen.blit(score_text, score_rect)
 
         pygame.display.flip()
         clock.tick(FPS)
@@ -277,11 +305,12 @@ def select_phase_screen():
                 exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                for text, y, key, bg_img, music_key in options:
-                    label = font_small.render(text, True, WHITE)
-                    rect = label.get_rect(center=(WIDTH//2 - 40, y))
-                    if rect.collidepoint(mouse_x, mouse_y):
+                for text, x, key, bg_img, music_key, color in options:
+                    btn_surface = outline_text(text, font_btn, color, (0, 0, 0))
+                    btn_rect = btn_surface.get_rect(center=(x, btn_y))
+                    if btn_rect.collidepoint(mouse_x, mouse_y):
                         return key
+
 
 # ---------- PARÂMETROS DAS FASES ----------
 def get_level_params(level_key):

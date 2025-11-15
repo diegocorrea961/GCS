@@ -176,11 +176,17 @@ scores = load_scores()
 
 # ---------- TELA INSERT COIN ----------
 def insert_coin_screen():
+    # tocar a música das telas (não reiniciará ao entrar na seleção)
     play_music(ASSETS["music_tela"])
 
     font_big = pygame.font.Font(None, 80)
+    font_small = pygame.font.Font(None, 20)
+
     blink = True
     blink_timer = 0
+
+    strong_yellow = (255, 240, 50)
+    outline_color = (0, 0, 0)  # contorno preto
 
     while True:
         screen.blit(background_menu, (0, 0))
@@ -190,9 +196,32 @@ def insert_coin_screen():
             blink = not blink
             blink_timer = 0
 
-        title = font_big.render("INSERT COIN", True, YELLOW)
+        # ---------- TEXTO COM CONTORNO ----------
+        def render_with_outline(text, font, text_color, outline_color):
+            base = font.render(text, True, text_color)
+            outline = font.render(text, True, outline_color)
+
+            surf = pygame.Surface((base.get_width()+4, base.get_height()+4), pygame.SRCALPHA)
+
+            # desenha contorno em 4 direções
+            surf.blit(outline, (2-2, 2))   # esquerda
+            surf.blit(outline, (2+2, 2))   # direita
+            surf.blit(outline, (2, 2-2))   # cima
+            surf.blit(outline, (2, 2+2))   # baixo
+
+            # texto por cima
+            surf.blit(base, (2, 2))
+            return surf
+        # ----------------------------------------
+
+        # Título blinking
         if blink:
+            title = render_with_outline("INSERT COIN", font_big, strong_yellow, outline_color)
             screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 40))
+
+        # Mensagem "pressione espaço"
+        msg = render_with_outline("PRESSIONE ESPAÇO", font_small, WHITE, outline_color)
+        screen.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT//2 + 120))
 
         pygame.display.flip()
         clock.tick(FPS)
@@ -201,8 +230,11 @@ def insert_coin_screen():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+
+            # agora SOMENTE a tecla espaço inicia
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return
+
 
 # ---------- SELEÇÃO DE FASE ----------
 def select_phase_screen():

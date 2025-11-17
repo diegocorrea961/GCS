@@ -1,4 +1,4 @@
-# TRABALHO FINAL - GERENCIAMENTO DE CONFIGURAÇÃO DE SOFTWARE
+# TRABALHO FINAL - GERENCIAMENTO DE CONFIGURAÇÃO DE SOFTWARE // PUC-RS
  **Nomes:** Diego Corrêa, Gabriel Depaoli e Mickael Castro
 
 **Professor: Filipo Mór**

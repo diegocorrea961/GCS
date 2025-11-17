@@ -1,8 +1,6 @@
 ##############################################################
 ###               S P A C E     E S C A P E                ###
 ##############################################################
-###                  versao Alpha 0.3                      ###
-##############################################################
 ### Objetivo: desviar dos meteoros que caem.               ###
 ### Cada colisão tira uma vida. Sobreviva o máximo que     ###
 ### conseguir!                                             ###
@@ -16,7 +14,21 @@ import os
 import json
 import time
 
-# Inicialização
+#contornar textos
+def outline_text(text, font, color, outline_color):
+    base = font.render(text, True, color)
+    outline = font.render(text, True, outline_color)
+
+    surf = pygame.Surface((base.get_width() + 4, base.get_height() + 4), pygame.SRCALPHA)
+
+    surf.blit(outline, (2, 0))
+    surf.blit(outline, (0, 2))
+    surf.blit(outline, (4, 2))
+    surf.blit(outline, (2, 4))
+
+    surf.blit(base, (2, 2))
+    return surf
+
 pygame.init()
 
 # Configurações do jogo
@@ -40,12 +52,10 @@ ASSETS = {
     "music_medio": "music_medio.mp3",
     "music_dificil": "music_dificil.mp3",
 
-    # imagens de fundo por fase
     "bg_facil": "imgfundo_facil.png",
     "bg_medio": "imgfundo_medio.png",
     "bg_dificil": "imgfundo_dificil.png",
 
-    # telas finais
     "img_gameover": "img_gameover.png",
     "img_vitoria": "img_vitoria.png",
 }
@@ -147,7 +157,7 @@ YELLOW = (240, 220, 70)
 background_menu = load_image(ASSETS["background"], WHITE, (WIDTH, HEIGHT))
 player_img = load_image(ASSETS["player"], BLUE, (80, 60))
 
-# ⚠️ Carregar sprites animados do meteoro
+# Gerar sprites animados do meteoro
 meteor_frames = [
     load_image("img_met1.png", RED, (40, 40)),
     load_image("img_met2.png", RED, (40, 40)),
@@ -174,13 +184,19 @@ bg_dificil_img = load_image(ASSETS["bg_dificil"], (40,0,0), (WIDTH, HEIGHT))
 
 scores = load_scores()
 
+
+
 # ---------- TELA INSERT COIN ----------
 def insert_coin_screen():
     play_music(ASSETS["music_tela"])
 
     font_big = pygame.font.Font(None, 80)
+    font_small = pygame.font.Font(None, 24)
+
     blink = True
     blink_timer = 0
+
+    strong_yellow = (255, 240, 50)
 
     while True:
         screen.blit(background_menu, (0, 0))
@@ -190,9 +206,12 @@ def insert_coin_screen():
             blink = not blink
             blink_timer = 0
 
-        title = font_big.render("INSERT COIN", True, YELLOW)
         if blink:
+            title = outline_text("INSERT COIN", font_big, strong_yellow, (0, 0, 0))
             screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//2 - 40))
+
+        msg = outline_text("PRESSIONE ESPAÇO", font_small, (255, 255, 255), (0, 0, 0))
+        screen.blit(msg, (WIDTH//2 - msg.get_width()//2, HEIGHT//2 + 120))
 
         pygame.display.flip()
         clock.tick(FPS)
@@ -201,55 +220,82 @@ def insert_coin_screen():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if event.type in (pygame.KEYDOWN, pygame.MOUSEBUTTONDOWN):
+
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return
+
+
 
 # ---------- SELEÇÃO DE FASE ----------
 def select_phase_screen():
-    font_big = pygame.font.Font(None, 60)
-    font_small = pygame.font.Font(None, 30)
+    font_title = pygame.font.Font(None, 70)
+    font_btn = pygame.font.Font(None, 50)
+    font_score = pygame.font.Font(None, 30)
 
-    options = [
-        ("FÁCIL", 230, "facil", bg_facil_img, "music_facil"),
-        ("MÉDIO", 310, "medio", bg_medio_img, "music_medio"),
-        ("DIFÍCIL", 390, "dificil", bg_dificil_img, "music_dificil")
+    btn_y = 300
+    spacing = 220
+
+    options = []
+    raw_options = [
+        ("FÁCIL",   WIDTH//2 - spacing, "facil",  bg_facil_img,  "music_facil",  (20, 200, 20)),
+        ("MÉDIO",   WIDTH//2,           "medio",  bg_medio_img,  "music_medio",  (230, 230, 40)),
+        ("DIFÍCIL", WIDTH//2 + spacing, "dificil", bg_dificil_img, "music_dificil", (220, 50, 50)),
     ]
+
+    # renderiza botões
+    for text, x, key, bg_img, music_key, color in raw_options:
+        btn_surface = outline_text(text, font_btn, color, (0, 0, 0))
+        btn_rect = btn_surface.get_rect(center=(x, btn_y))
+
+        score_value = scores.get("last_" + key, 0)
+        score_surface = outline_text(f"Score: {score_value}", font_score, (255, 255, 255), (0, 0, 0))
+        score_rect = score_surface.get_rect(center=(x, btn_y + 50))
+
+        options.append({
+            "key": key,
+            "x": x,
+            "color": color,
+            "btn_surface": btn_surface,
+            "btn_rect": btn_rect,
+            "score_surface": score_surface,
+            "score_rect": score_rect
+        })
+
+    title = outline_text("SELECIONE A FASE", font_title, (255, 255, 0), (0, 0, 0))
 
     while True:
         screen.blit(background_menu, (0, 0))
 
-        title = font_big.render("SELECIONE A FASE", True, WHITE)
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, 100))
+        screen.blit(title, (WIDTH//2 - title.get_width()//2, 120))
 
         mouse_x, mouse_y = pygame.mouse.get_pos()
 
-        for text, y, key, bg_img, music_key in options:
-            label = font_small.render(text, True, WHITE)
-            rect = label.get_rect(center=(WIDTH//2 - 40, y))
+        for opt in options:
+            btn_surface = opt["btn_surface"]
+            btn_rect = opt["btn_rect"]
 
-            last_label = font_small.render(f"Último: {scores.get('last_' + key, 0)}", True, WHITE)
-            last_rect = last_label.get_rect(midleft=(WIDTH//2 + 20, y))
+            if btn_rect.collidepoint(mouse_x, mouse_y):
+                pygame.draw.rect(screen, (255, 255, 255), btn_rect.inflate(20, 10), 3)
 
-            if rect.collidepoint(mouse_x, mouse_y):
-                pygame.draw.rect(screen, WHITE, rect.inflate(20, 8), 2)
+            screen.blit(btn_surface, btn_rect)
 
-            screen.blit(label, rect)
-            screen.blit(last_label, last_rect)
+            screen.blit(opt["score_surface"], opt["score_rect"])
 
         pygame.display.flip()
         clock.tick(FPS)
 
+        # Eventos
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
 
             if event.type == pygame.MOUSEBUTTONDOWN:
-                for text, y, key, bg_img, music_key in options:
-                    label = font_small.render(text, True, WHITE)
-                    rect = label.get_rect(center=(WIDTH//2 - 40, y))
-                    if rect.collidepoint(mouse_x, mouse_y):
-                        return key
+                for opt in options:
+                    if opt["btn_rect"].collidepoint(mouse_x, mouse_y):
+                        return opt["key"]
+
+
 
 # ---------- PARÂMETROS DAS FASES ----------
 def get_level_params(level_key):
@@ -259,6 +305,8 @@ def get_level_params(level_key):
         return (2, 6, 800, 12, 2, 250, bg_medio_img, ASSETS["music_medio"])
     else:
         return (5, 9, 600, 20, 3, 200, bg_dificil_img, ASSETS["music_dificil"])
+
+
 
 # ---------- LOOP DO JOGO ----------
 def play_game(level_key):
@@ -378,46 +426,80 @@ def play_game(level_key):
 
         pygame.display.flip()
 
+
+
 # ---------- TELA FINAL ----------
-def end_screen(score, result, level_key):
+def end_screen(score, result, level_key): 
     pygame.mixer.music.stop()
 
-    if result == "win":
-        img = img_vitoria
-        msg = "Vitoria! Pressione E para voltar ao menu."
-    else:
-        img = img_gameover
-        msg = "Game Over! Pressione E para voltar ao menu."
-
+    # salva score
     if level_key == "facil":
-        scores['last_facil'] = score
-        scores['high_facil'] = max(scores['high_facil'], score)
+        if score > scores.get("last_facil", 0):
+            scores["last_facil"] = score
+        if score > scores.get("high_facil", 0):
+            scores["high_facil"] = score
+
     elif level_key == "medio":
-        scores['last_medio'] = score
-        scores['high_medio'] = max(scores['high_medio'], score)
-    else:
-        scores['last_dificil'] = score
-        scores['high_dificil'] = max(scores['high_dificil'], score)
+        if score > scores.get("last_medio", 0):
+            scores["last_medio"] = score
+        if score > scores.get("high_medio", 0):
+            scores["high_medio"] = score
+
+    elif level_key == "dificil":
+        if score > scores.get("last_dificil", 0):
+            scores["last_dificil"] = score
+        if score > scores.get("high_dificil", 0):
+            scores["high_dificil"] = score
 
     save_scores(scores)
 
+    # txt end screen
+    img = img_vitoria if result == "win" else img_gameover
     screen.blit(img, (0, 0))
-    font = pygame.font.Font(None, 48)
 
-    final_score = font.render(f"Pontuação final: {score}", True, WHITE)
-    info = font.render(msg, True, WHITE)
+    pontos_txt = f"Pontuação final: {score}"
+    subtitulo = "PRESSIONE ESPAÇO PARA VOLTAR"
 
-    screen.blit(final_score, (WIDTH//2 - final_score.get_width()//2, HEIGHT//2 - 20))
-    screen.blit(info, (WIDTH//2 - info.get_width()//2, HEIGHT//2 + 30))
+    font_pts = pygame.font.Font(None, 40)
+    font_sub = pygame.font.Font(None, 38)
+
+    def draw_text_outline(font, text, color, x, y):
+        outline_color = (0, 0, 0)
+        offsets = [(-2,0),(2,0),(0,-2),(0,2)]
+        for ox, oy in offsets:
+            s = font.render(text, True, outline_color)
+            screen.blit(s, (x + ox, y + oy))
+        s = font.render(text, True, color)
+        screen.blit(s, (x, y))
+
+    y_points = HEIGHT // 2 + 80
+    y_sub = HEIGHT // 2 + 150
+
+    draw_text_outline(
+        font_pts, pontos_txt, (255, 255, 255),
+        WIDTH//2 - font_pts.size(pontos_txt)[0]//2,
+        y_points
+    )
+
+    draw_text_outline(
+        font_sub, subtitulo, (255, 230, 0),
+        WIDTH//2 - font_sub.size(subtitulo)[0]//2,
+        y_sub
+    )
+
     pygame.display.flip()
 
-    while True:
+    waiting = True
+    while waiting:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
                 exit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_e:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                waiting = False
                 return
+
+
 
 # ---------- LOOP PRINCIPAL ----------
 while True:

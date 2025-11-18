@@ -1,14 +1,18 @@
 # TRABALHO FINAL - GERENCIAMENTO DE CONFIGURAÇÃO DE SOFTWARE // PUC-RS
- **Nomes:** Diego Corrêa, Gabriel Depaoli e Mickael Castro
+ **Nomes:** Diego Corrêa, Gabriel Depaoli, Mickael Castro, Arthur Schultz e Gabriel Luz
 
 **Professor: Filipo Mór**
 
 
 Funções Definidas
 -
-Diego > Gerente de Cofiguração e Analista 
+Gabriel Luz > Analista de Qualidade
 
-Gabriel > Desenvolvedor e Analista 
+Arthur Schultz > Analista de Qualidade
+
+Diego > Gerente de Configuração 
+
+Gabriel > Desenvolvedor
 
 Mickael > Desenvolvedor
 
